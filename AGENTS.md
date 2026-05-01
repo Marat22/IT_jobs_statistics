@@ -31,7 +31,7 @@
 ```text
 [Browser]
     ↓
-[FastAPI (backend + HTML)]
+[Flask (backend + HTML)]
     ↓
 [PostgreSQL]
     ↑
@@ -40,7 +40,7 @@
 
 Компоненты:
 
-* FastAPI — backend + страницы (Jinja2)
+* Flask — backend + страницы (Jinja2)
 * Parser — сбор данных (вакансии + агрегаты резюме)
 * PostgreSQL — хранение данных
 
@@ -50,7 +50,7 @@
 
 ```text
 project/
-├── app/          # backend (FastAPI)
+├── app/          # backend (Flask)
 ├── parsers/      # парсинг вакансий и резюме
 ├── migrations/   # миграции
 ├── static/       # css/js
