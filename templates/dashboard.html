@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Аналитика IT-вакансий</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">MVP аналитики рынка</p>
+          <h1>Понять, куда идти и что учить</h1>
+          <p class="hero__text">
+            Сервис показывает спрос, конкуренцию и ключевые навыки по выбранному IT-направлению.
+          </p>
+        </div>
+        <div class="hero__note">
+          <span>Источник данных</span>
+          <strong>Демо-агрегаты</strong>
+          <small>Позже этот же контракт будет заполняться из PostgreSQL.</small>
+        </div>
+      </section>
+
+      <form class="filters" method="get">
+        <label>
+          <span>Специальность</span>
+          <select name="specialty" onchange="this.form.submit()">
+            {% for specialty in dashboard.filters.specialties %}
+              <option value="{{ specialty }}" {% if specialty == dashboard.filters.selected_specialty %}selected{% endif %}>
+                {{ specialty }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="is-muted">
+          <span>Грейд</span>
+          <select name="grade" disabled>
+            <option>Следующий этап</option>
+          </select>
+        </label>
+
+        <label class="is-muted">
+          <span>Навык</span>
+          <select name="skill" disabled>
+            <option>Следующий этап</option>
+          </select>
+        </label>
+
+        <label class="is-muted">
+          <span>Формат работы</span>
+          <select name="work_format" disabled>
+            <option>Следующий этап</option>
+          </select>
+        </label>
+      </form>
+
+      <section class="metrics" aria-label="Основные показатели">
+        <article class="metric-card">
+          <span>Вакансии</span>
+          <strong>{{ dashboard.metrics.vacancies_count }}</strong>
+          <small>Активные предложения по направлению</small>
+        </article>
+        <article class="metric-card">
+          <span>Резюме</span>
+          <strong>{{ dashboard.metrics.resumes_count }}</strong>
+          <small>Активные резюме в агрегированном виде</small>
+        </article>
+        <article class="metric-card metric-card--accent">
+          <span>Конкурентность</span>
+          {% if dashboard.metrics.competition_ratio is not none %}
+            <strong>{{ dashboard.metrics.competition_ratio }}</strong>
+            <small>Резюме на одну вакансию</small>
+          {% else %}
+            <strong>Нет данных</strong>
+            <small>Нужны вакансии для расчета</small>
+          {% endif %}
+        </article>
+      </section>
+
+      {% if not dashboard.has_data %}
+        <section class="empty-state">
+          <h2>По выбранному направлению пока нет вакансий</h2>
+          <p>Метрики конкуренции и графики появятся, когда в базе будут вакансии для этого направления.</p>
+        </section>
+      {% endif %}
+
+      <section
+        class="dashboard-grid"
+        data-grades='{{ dashboard.charts.grades | tojson }}'
+        data-experience='{{ dashboard.charts.experience | tojson }}'
+        data-work-format='{{ dashboard.charts.work_format | tojson }}'
+      >
+        <article class="panel chart-panel">
+          <div class="panel__header">
+            <h2>Вакансии по грейдам</h2>
+            <p>Где сейчас больше входных точек и роста</p>
+          </div>
+          <canvas id="gradesChart" aria-label="Распределение вакансий по грейдам"></canvas>
+        </article>
+
+        <article class="panel chart-panel">
+          <div class="panel__header">
+            <h2>Опыт</h2>
+            <p>Какой опыт чаще требуют работодатели</p>
+          </div>
+          <canvas id="experienceChart" aria-label="Распределение требуемого опыта"></canvas>
+        </article>
+
+        <article class="panel chart-panel">
+          <div class="panel__header">
+            <h2>Формат работы</h2>
+            <p>Удаленка, гибрид и офис в текущей выборке</p>
+          </div>
+          <canvas id="workFormatChart" aria-label="Распределение формата работы"></canvas>
+        </article>
+
+        <article class="panel skills-panel">
+          <div class="panel__header">
+            <h2>Топ навыков</h2>
+            <p>Что чаще всего встречается в требованиях</p>
+          </div>
+          {% if dashboard.top_skills %}
+            <table>
+              <thead>
+                <tr>
+                  <th>Навык</th>
+                  <th>Вакансии</th>
+                  <th>Доля</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for skill in dashboard.top_skills %}
+                  <tr>
+                    <td>{{ skill.name }}</td>
+                    <td>{{ skill.count }}</td>
+                    <td>{{ "%.0f"|format(skill.share * 100) }}%</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p class="table-empty">Навыки появятся после загрузки вакансий.</p>
+          {% endif %}
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
