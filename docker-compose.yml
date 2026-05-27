@@ -1,0 +1,41 @@
+services:
+  web:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: >
+      sh -c "pip install --no-cache-dir -r requirements.txt
+      && flask --app app.main run --host=0.0.0.0 --port=5000 --debug"
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: postgresql://it_jobs:it_jobs@db:5432/it_jobs
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: it_jobs
+      POSTGRES_USER: it_jobs
+      POSTGRES_PASSWORD: it_jobs
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: it_jobs
+      POSTGRES_USER: it_jobs
+      POSTGRES_PASSWORD: it_jobs
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U it_jobs -d it_jobs"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
