@@ -1,10 +1,13 @@
 from flask import Flask, render_template, request
 
 from app.analytics import get_dashboard_data
+from app.config import load_config
 
 
 def create_app() -> Flask:
     app = Flask(__name__, template_folder="../templates", static_folder="../static")
+    config = load_config()
+    app.config["DATABASE_URL"] = config.database_url
 
     @app.get("/")
     def dashboard():
