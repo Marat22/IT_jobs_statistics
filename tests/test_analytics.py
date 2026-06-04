@@ -2,7 +2,9 @@ from app.analytics import get_dashboard_data
 import app.analytics as analytics
 
 
-def test_dashboard_contract_contains_required_sections():
+def test_dashboard_contract_contains_required_sections(monkeypatch):
+    monkeypatch.setattr(analytics, "_build_db_dashboard_data", lambda **_: None)
+
     dashboard = get_dashboard_data("Backend Python")
 
     assert set(dashboard) == {
@@ -24,13 +26,17 @@ def test_dashboard_contract_contains_required_sections():
     assert dashboard["source"]["name"]
 
 
-def test_unknown_specialty_falls_back_to_default():
+def test_unknown_specialty_falls_back_to_default(monkeypatch):
+    monkeypatch.setattr(analytics, "_build_db_dashboard_data", lambda **_: None)
+
     dashboard = get_dashboard_data("Unknown")
 
     assert dashboard["filters"]["selected_specialty"] == "Backend Python"
 
 
-def test_competition_ratio_is_hidden_without_vacancies():
+def test_competition_ratio_is_hidden_without_vacancies(monkeypatch):
+    monkeypatch.setattr(analytics, "_build_db_dashboard_data", lambda **_: None)
+
     dashboard = get_dashboard_data("DevOps")
 
     assert dashboard["metrics"]["vacancies_count"] == 0
