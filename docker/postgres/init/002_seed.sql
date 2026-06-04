@@ -128,6 +128,248 @@ SELECT
     NOW() - ((n % 45) || ' days')::INTERVAL
 FROM generated_backend;
 
+WITH generated_frontend AS (
+    SELECT
+        n,
+        CASE
+            WHEN n % 100 < 22 THEN 'Junior'
+            WHEN n % 100 < 72 THEN 'Middle'
+            WHEN n % 100 < 96 THEN 'Senior'
+            ELSE 'Lead'
+        END AS grade,
+        CASE
+            WHEN n % 100 < 12 THEN 'No experience'
+            WHEN n % 100 < 62 THEN '1-3 years'
+            WHEN n % 100 < 94 THEN '3-6 years'
+            ELSE '6+ years'
+        END AS experience,
+        CASE
+            WHEN n % 10 < 4 THEN 'Remote'
+            WHEN n % 10 < 8 THEN 'Hybrid'
+            ELSE 'Office'
+        END AS work_format,
+        CASE
+            WHEN n % 10 IN (0, 1, 2, 3, 4, 5) THEN ARRAY['React']::TEXT[]
+            WHEN n % 10 IN (6, 7) THEN ARRAY['Vue']::TEXT[]
+            WHEN n % 10 = 8 THEN ARRAY['Angular']::TEXT[]
+            ELSE ARRAY['Next.js']::TEXT[]
+        END AS framework_skills,
+        CASE
+            WHEN n % 8 IN (0, 1, 2, 3) THEN ARRAY['Redux']::TEXT[]
+            WHEN n % 8 IN (4, 5) THEN ARRAY['Zustand']::TEXT[]
+            WHEN n % 8 = 6 THEN ARRAY['MobX']::TEXT[]
+            ELSE ARRAY['React Query']::TEXT[]
+        END AS state_skills,
+        CASE
+            WHEN n % 9 IN (0, 1, 2) THEN ARRAY['Vite/Webpack']::TEXT[]
+            WHEN n % 9 IN (3, 4) THEN ARRAY['Jest']::TEXT[]
+            WHEN n % 9 IN (5, 6) THEN ARRAY['Cypress']::TEXT[]
+            WHEN n % 9 = 7 THEN ARRAY['Storybook']::TEXT[]
+            ELSE ARRAY['Playwright']::TEXT[]
+        END AS tooling_skills,
+        CASE
+            WHEN n % 7 IN (0, 1, 2) THEN ARRAY['REST API']::TEXT[]
+            WHEN n % 7 IN (3, 4) THEN ARRAY['GraphQL']::TEXT[]
+            WHEN n % 7 = 5 THEN ARRAY['WebSocket']::TEXT[]
+            ELSE ARRAY['OpenAPI']::TEXT[]
+        END AS api_skills,
+        CASE
+            WHEN n % 11 IN (0, 1) THEN ARRAY['Figma']::TEXT[]
+            WHEN n % 11 IN (2, 3) THEN ARRAY['Accessibility']::TEXT[]
+            WHEN n % 11 = 4 THEN ARRAY['SSR']::TEXT[]
+            WHEN n % 11 = 5 THEN ARRAY['Microfrontends']::TEXT[]
+            WHEN n % 11 = 6 THEN ARRAY['Docker']::TEXT[]
+            WHEN n % 11 = 7 THEN ARRAY['CI/CD']::TEXT[]
+            WHEN n % 11 = 8 THEN ARRAY['Performance']::TEXT[]
+            WHEN n % 11 = 9 THEN ARRAY['Design System']::TEXT[]
+            ELSE ARRAY['Team Lead']::TEXT[]
+        END AS extra_skills
+    FROM generate_series(1, 1400) AS n
+)
+INSERT INTO vacancies (specialty, grade, skills, experience, work_format, salary_from, salary_to, salary_currency, created_at)
+SELECT
+    'Frontend',
+    grade,
+    ARRAY['JavaScript', 'TypeScript', 'HTML/CSS', 'Git']::TEXT[]
+        || framework_skills
+        || state_skills
+        || tooling_skills
+        || api_skills
+        || extra_skills,
+    experience,
+    work_format,
+    CASE grade
+        WHEN 'Junior' THEN 70000 + ((n % 8) * 5000)
+        WHEN 'Middle' THEN 135000 + ((n % 12) * 7000)
+        WHEN 'Senior' THEN 230000 + ((n % 11) * 10000)
+        ELSE 300000 + ((n % 9) * 12000)
+    END AS salary_from,
+    CASE grade
+        WHEN 'Junior' THEN 110000 + ((n % 8) * 6000)
+        WHEN 'Middle' THEN 205000 + ((n % 12) * 8000)
+        WHEN 'Senior' THEN 320000 + ((n % 11) * 12000)
+        ELSE 410000 + ((n % 9) * 15000)
+    END AS salary_to,
+    'RUB',
+    NOW() - ((n % 45) || ' days')::INTERVAL
+FROM generated_frontend;
+
+WITH generated_data_analyst AS (
+    SELECT
+        n,
+        CASE
+            WHEN n % 100 < 24 THEN 'Junior'
+            WHEN n % 100 < 76 THEN 'Middle'
+            WHEN n % 100 < 97 THEN 'Senior'
+            ELSE 'Lead'
+        END AS grade,
+        CASE
+            WHEN n % 100 < 14 THEN 'No experience'
+            WHEN n % 100 < 66 THEN '1-3 years'
+            WHEN n % 100 < 95 THEN '3-6 years'
+            ELSE '6+ years'
+        END AS experience,
+        CASE
+            WHEN n % 10 < 3 THEN 'Remote'
+            WHEN n % 10 < 7 THEN 'Hybrid'
+            ELSE 'Office'
+        END AS work_format,
+        CASE
+            WHEN n % 8 IN (0, 1, 2) THEN ARRAY['Power BI/Tableau']::TEXT[]
+            WHEN n % 8 IN (3, 4) THEN ARRAY['Power BI']::TEXT[]
+            WHEN n % 8 IN (5, 6) THEN ARRAY['Tableau']::TEXT[]
+            ELSE ARRAY['Looker Studio']::TEXT[]
+        END AS bi_skills,
+        CASE
+            WHEN n % 7 IN (0, 1, 2) THEN ARRAY['Pandas']::TEXT[]
+            WHEN n % 7 IN (3, 4) THEN ARRAY['NumPy']::TEXT[]
+            WHEN n % 7 = 5 THEN ARRAY['Jupyter']::TEXT[]
+            ELSE ARRAY['Airflow']::TEXT[]
+        END AS python_skills,
+        CASE
+            WHEN n % 9 IN (0, 1, 2) THEN ARRAY['Statistics']::TEXT[]
+            WHEN n % 9 IN (3, 4) THEN ARRAY['A/B tests']::TEXT[]
+            WHEN n % 9 IN (5, 6) THEN ARRAY['Product Analytics']::TEXT[]
+            WHEN n % 9 = 7 THEN ARRAY['Cohort Analysis']::TEXT[]
+            ELSE ARRAY['Unit Economics']::TEXT[]
+        END AS analytics_skills,
+        CASE
+            WHEN n % 10 IN (0, 1) THEN ARRAY['ETL']::TEXT[]
+            WHEN n % 10 IN (2, 3) THEN ARRAY['Data Modeling']::TEXT[]
+            WHEN n % 10 = 4 THEN ARRAY['ClickHouse']::TEXT[]
+            WHEN n % 10 = 5 THEN ARRAY['PostgreSQL']::TEXT[]
+            WHEN n % 10 = 6 THEN ARRAY['BigQuery']::TEXT[]
+            WHEN n % 10 = 7 THEN ARRAY['Excel']::TEXT[]
+            WHEN n % 10 = 8 THEN ARRAY['Dashboard Design']::TEXT[]
+            ELSE ARRAY['Stakeholder Management']::TEXT[]
+        END AS extra_skills
+    FROM generate_series(1, 1200) AS n
+)
+INSERT INTO vacancies (specialty, grade, skills, experience, work_format, salary_from, salary_to, salary_currency, created_at)
+SELECT
+    'Data Analyst',
+    grade,
+    ARRAY['SQL', 'Python', 'Excel']::TEXT[]
+        || bi_skills
+        || python_skills
+        || analytics_skills
+        || extra_skills,
+    experience,
+    work_format,
+    CASE grade
+        WHEN 'Junior' THEN 65000 + ((n % 8) * 4500)
+        WHEN 'Middle' THEN 125000 + ((n % 12) * 6500)
+        WHEN 'Senior' THEN 205000 + ((n % 11) * 9500)
+        ELSE 275000 + ((n % 9) * 11500)
+    END AS salary_from,
+    CASE grade
+        WHEN 'Junior' THEN 100000 + ((n % 8) * 5500)
+        WHEN 'Middle' THEN 185000 + ((n % 12) * 7500)
+        WHEN 'Senior' THEN 295000 + ((n % 11) * 11500)
+        ELSE 385000 + ((n % 9) * 14500)
+    END AS salary_to,
+    'RUB',
+    NOW() - ((n % 45) || ' days')::INTERVAL
+FROM generated_data_analyst;
+
+WITH generated_devops AS (
+    SELECT
+        n,
+        CASE
+            WHEN n % 100 < 10 THEN 'Junior'
+            WHEN n % 100 < 60 THEN 'Middle'
+            WHEN n % 100 < 93 THEN 'Senior'
+            ELSE 'Lead'
+        END AS grade,
+        CASE
+            WHEN n % 100 < 5 THEN 'No experience'
+            WHEN n % 100 < 48 THEN '1-3 years'
+            WHEN n % 100 < 90 THEN '3-6 years'
+            ELSE '6+ years'
+        END AS experience,
+        CASE
+            WHEN n % 10 < 5 THEN 'Remote'
+            WHEN n % 10 < 8 THEN 'Hybrid'
+            ELSE 'Office'
+        END AS work_format,
+        CASE
+            WHEN n % 8 IN (0, 1, 2, 3) THEN ARRAY['Kubernetes']::TEXT[]
+            WHEN n % 8 IN (4, 5) THEN ARRAY['Docker']::TEXT[]
+            WHEN n % 8 = 6 THEN ARRAY['OpenShift']::TEXT[]
+            ELSE ARRAY['Helm']::TEXT[]
+        END AS container_skills,
+        CASE
+            WHEN n % 7 IN (0, 1, 2) THEN ARRAY['Terraform']::TEXT[]
+            WHEN n % 7 IN (3, 4) THEN ARRAY['Ansible']::TEXT[]
+            WHEN n % 7 = 5 THEN ARRAY['Pulumi']::TEXT[]
+            ELSE ARRAY['GitLab CI']::TEXT[]
+        END AS infra_skills,
+        CASE
+            WHEN n % 9 IN (0, 1, 2) THEN ARRAY['AWS/GCP']::TEXT[]
+            WHEN n % 9 IN (3, 4) THEN ARRAY['AWS']::TEXT[]
+            WHEN n % 9 IN (5, 6) THEN ARRAY['Yandex Cloud']::TEXT[]
+            WHEN n % 9 = 7 THEN ARRAY['Azure']::TEXT[]
+            ELSE ARRAY['Bare Metal']::TEXT[]
+        END AS cloud_skills,
+        CASE
+            WHEN n % 10 IN (0, 1) THEN ARRAY['Prometheus']::TEXT[]
+            WHEN n % 10 IN (2, 3) THEN ARRAY['Grafana']::TEXT[]
+            WHEN n % 10 = 4 THEN ARRAY['ELK']::TEXT[]
+            WHEN n % 10 = 5 THEN ARRAY['SRE']::TEXT[]
+            WHEN n % 10 = 6 THEN ARRAY['Bash']::TEXT[]
+            WHEN n % 10 = 7 THEN ARRAY['Python']::TEXT[]
+            WHEN n % 10 = 8 THEN ARRAY['Networking']::TEXT[]
+            ELSE ARRAY['Incident Management']::TEXT[]
+        END AS extra_skills
+    FROM generate_series(1, 1100) AS n
+)
+INSERT INTO vacancies (specialty, grade, skills, experience, work_format, salary_from, salary_to, salary_currency, created_at)
+SELECT
+    'DevOps',
+    grade,
+    ARRAY['Linux', 'CI/CD', 'Git', 'Monitoring']::TEXT[]
+        || container_skills
+        || infra_skills
+        || cloud_skills
+        || extra_skills,
+    experience,
+    work_format,
+    CASE grade
+        WHEN 'Junior' THEN 90000 + ((n % 8) * 5500)
+        WHEN 'Middle' THEN 165000 + ((n % 12) * 8000)
+        WHEN 'Senior' THEN 255000 + ((n % 11) * 11000)
+        ELSE 330000 + ((n % 9) * 13000)
+    END AS salary_from,
+    CASE grade
+        WHEN 'Junior' THEN 130000 + ((n % 8) * 6500)
+        WHEN 'Middle' THEN 245000 + ((n % 12) * 9000)
+        WHEN 'Senior' THEN 360000 + ((n % 11) * 13000)
+        ELSE 455000 + ((n % 9) * 16000)
+    END AS salary_to,
+    'RUB',
+    NOW() - ((n % 45) || ' days')::INTERVAL
+FROM generated_devops;
+
 INSERT INTO resume_aggregates (specialty, grade, active_resume_count, collected_at)
 VALUES
     ('Backend Python', NULL, 3920, NOW()),
@@ -136,22 +378,22 @@ VALUES
     ('Backend Python', 'Senior', 720, NOW()),
     ('Backend Python', 'Lead', 140, NOW()),
 
-    ('Frontend', NULL, 418, NOW()),
-    ('Frontend', 'Junior', 196, NOW()),
-    ('Frontend', 'Middle', 162, NOW()),
-    ('Frontend', 'Senior', 52, NOW()),
-    ('Frontend', 'Lead', 8, NOW()),
+    ('Frontend', NULL, 4520, NOW()),
+    ('Frontend', 'Junior', 1510, NOW()),
+    ('Frontend', 'Middle', 2320, NOW()),
+    ('Frontend', 'Senior', 610, NOW()),
+    ('Frontend', 'Lead', 80, NOW()),
 
-    ('Data Analyst', NULL, 226, NOW()),
-    ('Data Analyst', 'Junior', 92, NOW()),
-    ('Data Analyst', 'Middle', 98, NOW()),
-    ('Data Analyst', 'Senior', 31, NOW()),
-    ('Data Analyst', 'Lead', 5, NOW()),
+    ('Data Analyst', NULL, 2860, NOW()),
+    ('Data Analyst', 'Junior', 840, NOW()),
+    ('Data Analyst', 'Middle', 1510, NOW()),
+    ('Data Analyst', 'Senior', 450, NOW()),
+    ('Data Analyst', 'Lead', 60, NOW()),
 
-    ('DevOps', NULL, 118, NOW()),
-    ('DevOps', 'Junior', 36, NOW()),
-    ('DevOps', 'Middle', 48, NOW()),
-    ('DevOps', 'Senior', 27, NOW()),
-    ('DevOps', 'Lead', 7, NOW()),
+    ('DevOps', NULL, 2050, NOW()),
+    ('DevOps', 'Junior', 290, NOW()),
+    ('DevOps', 'Middle', 890, NOW()),
+    ('DevOps', 'Senior', 720, NOW()),
+    ('DevOps', 'Lead', 150, NOW()),
 
     ('QA Engineer', NULL, 64, NOW());
