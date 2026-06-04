@@ -5,13 +5,23 @@ import app.analytics as analytics
 def test_dashboard_contract_contains_required_sections():
     dashboard = get_dashboard_data("Backend Python")
 
-    assert set(dashboard) == {"filters", "metrics", "charts", "top_skills", "has_data"}
+    assert set(dashboard) == {
+        "filters",
+        "metrics",
+        "charts",
+        "top_skills",
+        "insights",
+        "source",
+        "has_data",
+    }
     assert dashboard["filters"]["selected_specialty"] == "Backend Python"
     assert dashboard["metrics"]["vacancies_count"] > 0
     assert dashboard["metrics"]["resumes_count"] > 0
     assert dashboard["metrics"]["competition_ratio"] is not None
     assert dashboard["charts"]["grades"]
     assert dashboard["top_skills"]
+    assert dashboard["insights"]["top_skill"]
+    assert dashboard["source"]["name"]
 
 
 def test_unknown_specialty_falls_back_to_default():
@@ -51,6 +61,8 @@ def test_uses_db_payload_when_available(monkeypatch):
             "work_format": [{"label": "Remote", "value": 10}],
         },
         "top_skills": [{"name": "Python", "count": 10, "share": 1.0}],
+        "insights": {"top_skill": "Python"},
+        "source": {"name": "PostgreSQL"},
         "has_data": True,
     }
 

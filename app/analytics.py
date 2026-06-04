@@ -172,6 +172,12 @@ def _build_mock_dashboard_data(
     metrics = specialty_data.get("metrics", {})
     vacancies_count = int(metrics.get("vacancies_count", 0))
     resumes_count = int(metrics.get("resumes_count", 0))
+    competition_ratio = _competition_ratio(resumes_count, vacancies_count)
+    charts = specialty_data.get(
+        "charts",
+        {"grades": [], "experience": [], "work_format": []},
+    )
+    top_skills = specialty_data.get("top_skills", [])
 
     return {
         "filters": {
@@ -187,13 +193,22 @@ def _build_mock_dashboard_data(
         "metrics": {
             "vacancies_count": vacancies_count,
             "resumes_count": resumes_count,
-            "competition_ratio": _competition_ratio(resumes_count, vacancies_count),
+            "competition_ratio": competition_ratio,
         },
-        "charts": specialty_data.get(
-            "charts",
-            {"grades": [], "experience": [], "work_format": []},
+        "charts": charts,
+        "top_skills": top_skills,
+        "insights": _build_insights(
+            vacancies_count=vacancies_count,
+            resumes_count=resumes_count,
+            competition_ratio=competition_ratio,
+            charts=charts,
+            top_skills=top_skills,
         ),
-        "top_skills": specialty_data.get("top_skills", []),
+        "source": {
+            "name": "Демо-агрегаты",
+            "details": "Локальная демонстрационная выборка для защиты",
+            "updated_at": "демо-режим",
+        },
         "has_data": vacancies_count > 0,
     }
 
@@ -225,10 +240,17 @@ def _build_db_dashboard_data(
 
                 vacancies_count = _fetch_vacancies_count(cursor, where_sql, where_params)
                 resumes_count = _fetch_resumes_count(cursor, selected_specialty, grade)
+                competition_ratio = _competition_ratio(resumes_count, vacancies_count)
 
                 grades = _fetch_distinct_values(cursor, "grade")
                 skills = _fetch_distinct_skills(cursor)
                 work_formats = _fetch_distinct_values(cursor, "work_format")
+                charts = {
+                    "grades": _fetch_distribution(cursor, "grade", where_sql, where_params),
+                    "experience": _fetch_distribution(cursor, "experience", where_sql, where_params),
+                    "work_format": _fetch_distribution(cursor, "work_format", where_sql, where_params),
+                }
+                top_skills = _fetch_top_skills(cursor, where_sql, where_params, vacancies_count)
 
                 return {
                     "filters": {
@@ -244,14 +266,22 @@ def _build_db_dashboard_data(
                     "metrics": {
                         "vacancies_count": vacancies_count,
                         "resumes_count": resumes_count,
-                        "competition_ratio": _competition_ratio(resumes_count, vacancies_count),
+                        "competition_ratio": competition_ratio,
                     },
-                    "charts": {
-                        "grades": _fetch_distribution(cursor, "grade", where_sql, where_params),
-                        "experience": _fetch_distribution(cursor, "experience", where_sql, where_params),
-                        "work_format": _fetch_distribution(cursor, "work_format", where_sql, where_params),
+                    "charts": charts,
+                    "top_skills": top_skills,
+                    "insights": _build_insights(
+                        vacancies_count=vacancies_count,
+                        resumes_count=resumes_count,
+                        competition_ratio=competition_ratio,
+                        charts=charts,
+                        top_skills=top_skills,
+                    ),
+                    "source": {
+                        "name": "PostgreSQL",
+                        "details": "Вакансии и агрегаты резюме из локальной БД",
+                        "updated_at": _fetch_data_updated_at(cursor),
                     },
-                    "top_skills": _fetch_top_skills(cursor, where_sql, where_params, vacancies_count),
                     "has_data": vacancies_count > 0,
                 }
     except Exception:
@@ -418,6 +448,69 @@ def _fetch_top_skills(
         share = round(count_value / vacancies_count, 2) if vacancies_count else 0.0
         result.append({"name": name, "count": count_value, "share": share})
     return result
+
+
+def _fetch_data_updated_at(cursor: Any) -> str:
+    cursor.execute(
+        """
+        SELECT TO_CHAR(MAX(updated_at), 'DD.MM.YYYY HH24:MI')
+        FROM (
+            SELECT MAX(created_at) AS updated_at FROM vacancies
+            UNION ALL
+            SELECT MAX(collected_at) AS updated_at FROM resume_aggregates
+        ) updates
+        """
+    )
+    row = cursor.fetchone()
+    return row[0] if row and row[0] else "нет данных"
+
+
+def _build_insights(
+    vacancies_count: int,
+    resumes_count: int,
+    competition_ratio: float | None,
+    charts: dict[str, list[dict[str, Any]]],
+    top_skills: list[dict[str, Any]],
+) -> dict[str, str]:
+    top_skill = top_skills[0]["name"] if top_skills else "нет данных"
+    dominant_grade = _top_label(charts.get("grades", []))
+    dominant_format = _top_label(charts.get("work_format", []))
+
+    if competition_ratio is None:
+        competition_level = "Нет данных"
+        competition_text = "Недостаточно вакансий для расчета конкуренции."
+    elif competition_ratio >= 4:
+        competition_level = "Высокая конкуренция"
+        competition_text = "Резюме заметно больше, чем вакансий. Важно усиливать портфолио и точечно закрывать ключевые навыки."
+    elif competition_ratio >= 2:
+        competition_level = "Умеренная конкуренция"
+        competition_text = "Рынок конкурентный, но есть пространство для входа при хорошем совпадении с требованиями."
+    else:
+        competition_level = "Комфортная конкуренция"
+        competition_text = "Спрос сопоставим с предложением. Направление выглядит перспективным для отклика."
+
+    if vacancies_count <= 0:
+        learning_focus = "Сначала накопить данные по вакансиям, затем сравнивать навыки и грейды."
+    elif top_skill != "нет данных" and dominant_grade != "нет данных":
+        learning_focus = f"Фокус обучения: {top_skill}; основной спрос сейчас на уровне {dominant_grade}."
+    else:
+        learning_focus = "Фокус обучения появится после загрузки требований вакансий."
+
+    return {
+        "competition_level": competition_level,
+        "competition_text": competition_text,
+        "top_skill": top_skill,
+        "dominant_grade": dominant_grade,
+        "dominant_format": dominant_format,
+        "learning_focus": learning_focus,
+        "market_summary": f"{vacancies_count} вакансий и {resumes_count} активных резюме в выбранной выборке.",
+    }
+
+
+def _top_label(series: list[dict[str, Any]]) -> str:
+    if not series:
+        return "нет данных"
+    return max(series, key=lambda item: item.get("value", 0)).get("label", "нет данных")
 
 
 def _competition_ratio(resumes_count: int, vacancies_count: int) -> float | None:

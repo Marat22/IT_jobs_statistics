@@ -11,18 +11,19 @@
   <body>
     <main class="page-shell">
       <section class="hero">
-        <div>
-          <p class="eyebrow">MVP аналитики рынка</p>
-          <h1>Понять, куда идти и что учить</h1>
+        <div class="hero__content">
+          <p class="eyebrow">Веб-сервис анализа рынка IT-вакансий</p>
+          <h1>Куда идти и что учить</h1>
           <p class="hero__text">
-            Сервис показывает спрос, конкуренцию и ключевые навыки по выбранному IT-направлению.
+            Дашборд показывает спрос, конкуренцию и ключевые навыки по выбранному IT-направлению на основе вакансий и агрегированных резюме.
           </p>
         </div>
-        <div class="hero__note">
+        <aside class="source-card" aria-label="Источник данных">
           <span>Источник данных</span>
-          <strong>Демо-агрегаты</strong>
-          <small>Позже этот же контракт будет заполняться из PostgreSQL.</small>
-        </div>
+          <strong>{{ dashboard.source.name }}</strong>
+          <small>{{ dashboard.source.details }}</small>
+          <small>Обновлено: {{ dashboard.source.updated_at }}</small>
+        </aside>
       </section>
 
       <form class="filters" method="get">
@@ -37,24 +38,39 @@
           </select>
         </label>
 
-        <label class="is-muted">
+        <label>
           <span>Грейд</span>
-          <select name="grade" disabled>
-            <option>Следующий этап</option>
+          <select name="grade" onchange="this.form.submit()">
+            <option value="">Все грейды</option>
+            {% for grade in dashboard.filters.grades %}
+              <option value="{{ grade }}" {% if grade == dashboard.filters.selected_grade %}selected{% endif %}>
+                {{ grade }}
+              </option>
+            {% endfor %}
           </select>
         </label>
 
-        <label class="is-muted">
+        <label>
           <span>Навык</span>
-          <select name="skill" disabled>
-            <option>Следующий этап</option>
+          <select name="skill" onchange="this.form.submit()">
+            <option value="">Все навыки</option>
+            {% for skill in dashboard.filters.skills %}
+              <option value="{{ skill }}" {% if skill == dashboard.filters.selected_skill %}selected{% endif %}>
+                {{ skill }}
+              </option>
+            {% endfor %}
           </select>
         </label>
 
-        <label class="is-muted">
+        <label>
           <span>Формат работы</span>
-          <select name="work_format" disabled>
-            <option>Следующий этап</option>
+          <select name="work_format" onchange="this.form.submit()">
+            <option value="">Все форматы</option>
+            {% for work_format in dashboard.filters.work_formats %}
+              <option value="{{ work_format }}" {% if work_format == dashboard.filters.selected_work_format %}selected{% endif %}>
+                {{ work_format }}
+              </option>
+            {% endfor %}
           </select>
         </label>
       </form>
@@ -63,12 +79,12 @@
         <article class="metric-card">
           <span>Вакансии</span>
           <strong>{{ dashboard.metrics.vacancies_count }}</strong>
-          <small>Активные предложения по направлению</small>
+          <small>Активные предложения в выбранной выборке</small>
         </article>
         <article class="metric-card">
-          <span>Резюме</span>
+          <span>Активные резюме</span>
           <strong>{{ dashboard.metrics.resumes_count }}</strong>
-          <small>Активные резюме в агрегированном виде</small>
+          <small>Только агрегированное значение, без персональных данных</small>
         </article>
         <article class="metric-card metric-card--accent">
           <span>Конкурентность</span>
@@ -82,10 +98,28 @@
         </article>
       </section>
 
+      <section class="insights" aria-label="Выводы">
+        <article>
+          <span>Оценка рынка</span>
+          <h2>{{ dashboard.insights.competition_level }}</h2>
+          <p>{{ dashboard.insights.competition_text }}</p>
+        </article>
+        <article>
+          <span>Что учить</span>
+          <h2>{{ dashboard.insights.top_skill }}</h2>
+          <p>{{ dashboard.insights.learning_focus }}</p>
+        </article>
+        <article>
+          <span>Где спрос</span>
+          <h2>{{ dashboard.insights.dominant_grade }}</h2>
+          <p>Самый частый формат работы: {{ dashboard.insights.dominant_format }}.</p>
+        </article>
+      </section>
+
       {% if not dashboard.has_data %}
         <section class="empty-state">
-          <h2>По выбранному направлению пока нет вакансий</h2>
-          <p>Метрики конкуренции и графики появятся, когда в базе будут вакансии для этого направления.</p>
+          <h2>По выбранным фильтрам нет вакансий</h2>
+          <p>Метрики резюме остаются доступными, а графики и топ навыков появятся после загрузки подходящих вакансий.</p>
         </section>
       {% endif %}
 
@@ -98,31 +132,37 @@
         <article class="panel chart-panel">
           <div class="panel__header">
             <h2>Вакансии по грейдам</h2>
-            <p>Где сейчас больше входных точек и роста</p>
+            <p>Показывает, где сейчас больше входных точек и возможностей роста.</p>
           </div>
-          <canvas id="gradesChart" aria-label="Распределение вакансий по грейдам"></canvas>
+          <div class="chart-box">
+            <canvas id="gradesChart" aria-label="Распределение вакансий по грейдам"></canvas>
+          </div>
         </article>
 
         <article class="panel chart-panel">
           <div class="panel__header">
-            <h2>Опыт</h2>
-            <p>Какой опыт чаще требуют работодатели</p>
+            <h2>Требуемый опыт</h2>
+            <p>Помогает оценить порог входа в выбранное направление.</p>
           </div>
-          <canvas id="experienceChart" aria-label="Распределение требуемого опыта"></canvas>
+          <div class="chart-box">
+            <canvas id="experienceChart" aria-label="Распределение требуемого опыта"></canvas>
+          </div>
         </article>
 
         <article class="panel chart-panel">
           <div class="panel__header">
             <h2>Формат работы</h2>
-            <p>Удаленка, гибрид и офис в текущей выборке</p>
+            <p>Удаленка, гибрид и офис в текущей выборке вакансий.</p>
           </div>
-          <canvas id="workFormatChart" aria-label="Распределение формата работы"></canvas>
+          <div class="chart-box">
+            <canvas id="workFormatChart" aria-label="Распределение формата работы"></canvas>
+          </div>
         </article>
 
         <article class="panel skills-panel">
           <div class="panel__header">
             <h2>Топ навыков</h2>
-            <p>Что чаще всего встречается в требованиях</p>
+            <p>Навыки отсортированы по частоте упоминания в требованиях вакансий.</p>
           </div>
           {% if dashboard.top_skills %}
             <table>
@@ -144,7 +184,7 @@
               </tbody>
             </table>
           {% else %}
-            <p class="table-empty">Навыки появятся после загрузки вакансий.</p>
+            <p class="table-empty">Нет подходящих вакансий для расчета навыков.</p>
           {% endif %}
         </article>
       </section>
