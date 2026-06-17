@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Админ-панель</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  </head>
+  <body>
+    <main class="page-shell admin-shell">
+      <section class="admin-hero">
+        <div>
+          <p class="eyebrow">Управление сбором статистики</p>
+          <h1>Админ-панель</h1>
+          <p class="hero__text">
+            Управление IT-специальностями и навыками, по которым собирается статистика рынка вакансий.
+          </p>
+        </div>
+        <a class="admin-link" href="{{ url_for('dashboard') }}">Открыть дашборд</a>
+      </section>
+
+      {% if not is_authenticated %}
+        <section class="admin-panel admin-login">
+          <div class="panel__header">
+            <h2>Вход</h2>
+            <p>Введите пароль администратора, чтобы открыть формы настройки.</p>
+          </div>
+
+          {% if error %}
+            <p class="admin-message admin-message--error">{{ error }}</p>
+          {% endif %}
+
+          <form class="admin-form" method="post">
+            <input type="hidden" name="action" value="login">
+            <label>
+              <span>Пароль</span>
+              <input name="password" type="password" autocomplete="current-password" required autofocus>
+            </label>
+            <button type="submit">Войти</button>
+          </form>
+        </section>
+      {% else %}
+        {% if notice %}
+          <p class="admin-message admin-message--success">{{ notice }}</p>
+        {% endif %}
+
+        <section class="admin-grid">
+          <article class="admin-panel">
+            <div class="panel__header">
+              <h2>Добавить навык</h2>
+              <p>Навык будет добавлен в активный список сбора и аналитики.</p>
+            </div>
+
+            <form class="admin-form" method="post">
+              <input type="hidden" name="action" value="add_skill">
+              <label>
+                <span>Название навыка</span>
+                <input name="skill_name" type="text" placeholder="Например: Python" required>
+              </label>
+              <button type="submit">Добавить навык</button>
+            </form>
+          </article>
+
+          <article class="admin-panel">
+            <div class="panel__header">
+              <h2>Добавить специальность</h2>
+              <p>Специальность будет выглядеть готовой к подключению в фильтрах.</p>
+            </div>
+
+            <form class="admin-form" method="post">
+              <input type="hidden" name="action" value="add_specialty">
+              <label>
+                <span>Название специальности</span>
+                <input name="specialty_name" type="text" placeholder="Например: Data Analyst" required>
+              </label>
+              <button type="submit">Добавить специальность</button>
+            </form>
+          </article>
+        </section>
+
+      {% endif %}
+    </main>
+  </body>
+</html>
